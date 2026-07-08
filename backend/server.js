@@ -10,10 +10,10 @@ app.use(cors());
 app.use(express.json());
 // Add this line near the top with your other requires
 const authRoute = require('./routes/auth');
-
+const mealRoute = require('./routes/meals');
 // Add this line right below your app.use(express.json()); middleware
 app.use('/api/user', authRoute);
-
+app.use('/api/meals', mealRoute);
 // Test Route
 app.get('/', (req, res) => {
     res.send('Nutrition Assistant Backend is running!');
