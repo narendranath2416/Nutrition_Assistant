@@ -8,6 +8,11 @@ const PORT = process.env.PORT || 5000;
 // Middleware
 app.use(cors());
 app.use(express.json());
+// Add this line near the top with your other requires
+const authRoute = require('./routes/auth');
+
+// Add this line right below your app.use(express.json()); middleware
+app.use('/api/user', authRoute);
 
 // Test Route
 app.get('/', (req, res) => {
