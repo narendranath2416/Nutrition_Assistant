@@ -1,12 +1,10 @@
 import { useState, useEffect } from 'react';
-import './App.css'; // Connects directly to external stylesheet variables
+import './App.css'; 
 
 export default function App() {
-  // Session Access States
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [authTab, setAuthTab] = useState('login');
   
-  // Registration Profile States
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [age, setAge] = useState('20');
@@ -14,7 +12,6 @@ export default function App() {
   const [height, setHeight] = useState('194');
   const [fitnessGoal, setFitnessGoal] = useState('hypertrophy');
 
-  // Input Data Form States
   const [foodName, setFoodName] = useState('');
   const [calories, setCalories] = useState('');
   const [protein, setProtein] = useState('');
@@ -22,10 +19,16 @@ export default function App() {
   const [fats, setFats] = useState('');
   const [mealWindow, setMealWindow] = useState('Breakfast');
 
-  // Active Sync Ledger Stream Array 
   const [loggedMeals, setLoggedMeals] = useState([]);
 
-  // Fetch the live database logs array whenever a user successfully authenticates
+  // 🎯 HYPERTROPHY SHORTCUT CHIPS CONFIGURATION
+  const shortcuts = [
+    { name: '🍳 3 Egg Whites', food: 'Egg Whites (3)', cal: 50, p: 11, c: 1, f: 0 },
+    { name: '🥤 Whey Protein', food: '1 Scoop Whey Protein', cal: 120, p: 25, c: 2, f: 1 },
+    { name: '🍗 Chicken & Rice', food: 'Grilled Chicken with Basmati Rice', cal: 450, p: 45, c: 40, f: 5 },
+    { name: '🍌 Banana & Oats', food: 'Oatmeal with Banana', cal: 310, p: 10, c: 55, f: 4 }
+  ];
+
   useEffect(() => {
     if (isLoggedIn && email) {
       fetch(`http://localhost:5000/api/meals/history/${email}`)
@@ -33,17 +36,32 @@ export default function App() {
         .then((data) => {
           if (Array.isArray(data)) setLoggedMeals(data);
         })
-        .catch((err) => console.error("Error synchronizing tracking history:", err));
+        .catch((err) => console.error("Error synchronizing history:", err));
     }
   }, [isLoggedIn, email]);
 
-  // Dynamic Live Aggregate Value Math Calculations
+  // Live Aggregate Math Calculations
   const totalCalories = loggedMeals.reduce((sum, item) => sum + (Number(item.calories) || 0), 0);
   const totalProtein = loggedMeals.reduce((sum, item) => sum + (Number(item.protein) || 0), 0);
   const totalCarbs = loggedMeals.reduce((sum, item) => sum + (Number(item.carbs) || 0), 0);
   const totalFats = loggedMeals.reduce((sum, item) => sum + (Number(item.fats) || 0), 0);
 
-  // User Profile Cloud Insertion Submission
+  // Targets based on 76kg / Hypertrophy goals
+  const targetCal = 3000;
+  const targetProt = 160;
+
+  // Calculate percentage caps for the progress rings (Max out at 100%)
+  const calPercent = Math.min((totalCalories / targetCal) * 100, 100);
+  const protPercent = Math.min((totalProtein / targetProt) * 100, 100);
+
+  const applyShortcut = (item) => {
+    setFoodName(item.food);
+    setCalories(item.cal);
+    setProtein(item.p);
+    setCarbs(item.c);
+    setFats(item.f);
+  };
+
   const handleAuthSubmit = async (e) => {
     e.preventDefault();
     const endpoint = authTab === 'login' ? '/api/auth/login' : '/api/auth/register';
@@ -57,32 +75,21 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-
       const data = await response.json();
-
       if (response.ok) {
         setIsLoggedIn(true);
       } else {
-        alert(data.message || "Authentication layer rejected the request parameters.");
+        alert(data.message || "Authentication layer rejected parameters.");
       }
     } catch (err) {
       console.error(err);
-      alert("Cannot talk to backend on port 5000. Is server.js active?");
+      alert("Cannot talk to backend on port 5000.");
     }
   };
 
-  // Dietary Food Document Cloud Integration Pipeline
   const handleLogFood = async (e) => {
     e.preventDefault();
-    const payload = {
-      userEmail: email, // Associate this tracking row with this active user profile
-      foodName,
-      mealWindow,
-      calories: Number(calories) || 0,
-      protein: Number(protein) || 0,
-      carbs: Number(carbs) || 0,
-      fats: Number(fats) || 0
-    };
+    const payload = { userEmail: email, foodName, mealWindow, calories: Number(calories), protein: Number(protein), carbs: Number(carbs), fats: Number(fats) };
 
     try {
       const response = await fetch('http://localhost:5000/api/meals/log', {
@@ -90,19 +97,31 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-
       const data = await response.json();
-
       if (response.ok && data.newMeal) {
-        // Unshift the successfully returned document payload directly into state
         setLoggedMeals([data.newMeal, ...loggedMeals]);
         setFoodName(''); setCalories(''); setProtein(''); setCarbs(''); setFats('');
-      } else {
-        alert("Failed to commit food record document map to database cluster collections.");
       }
     } catch (err) {
       console.error(err);
-      alert("Network dropped during data sync collection write transaction sequence.");
+      alert("Network error during meal write operation.");
+    }
+  };
+
+  // 🗑️ CONTROL CODE: DELETE TRANSACTION METHOD
+  const handleDeleteMeal = async (mealId) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/meals/delete/${mealId}`, {
+        method: 'DELETE'
+      });
+      if (response.ok) {
+        // Filter out the deleted meal from local state instantly
+        setLoggedMeals(loggedMeals.filter(meal => meal._id !== mealId));
+      } else {
+        alert("Could not remove record from cloud collection.");
+      }
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -121,12 +140,10 @@ export default function App() {
             <h2>My Nutrition Partner</h2>
             <p className="auth-subtitle">Sign in to your dashboard</p>
           </div>
-
           <div className="auth-tabs">
             <button type="button" className={`auth-tab-btn ${authTab === 'login' ? 'active-tab' : ''}`} onClick={() => setAuthTab('login')}>Sign In</button>
             <button type="button" className={`auth-tab-btn ${authTab === 'register' ? 'active-tab' : ''}`} onClick={() => setAuthTab('register')}>Register</button>
           </div>
-
           <form onSubmit={handleAuthSubmit} className="auth-native-form">
             <div className="auth-input-group">
               <label>Email Address</label>
@@ -136,7 +153,6 @@ export default function App() {
               <label>Password</label>
               <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
             </div>
-
             {authTab === 'register' && (
               <div className="fade-in" style={{display:'flex', flexDirection:'column', gap:'1.25rem'}}>
                 <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px'}}>
@@ -197,17 +213,36 @@ export default function App() {
           </div>
         </header>
 
+        {/* 🌀 PROGRESS RINGS AREA */}
+        <section style={{display: 'flex', gap: '20px', marginBottom: '25px', background: '#ffffff', padding: '20px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)'}}>
+          <div style={{display: 'flex', alignItems: 'center', gap: '15px', flex: 1}}>
+            <div style={{
+              width: '70px', height: '70px', borderRadius: '50%', 
+              background: `conic-gradient(#22c55e ${calPercent}%, #e2e8f0 0deg)`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '13px', color: '#0f172a'
+            }}>{Math.round(calPercent)}%</div>
+            <div>
+              <h4 style={{margin: 0, color: '#64748b', fontSize: '14px'}}>Calories Progress</h4>
+              <p style={{margin: '4px 0 0 0', fontWeight: 'bold', fontSize: '18px', color: '#0f172a'}}>{totalCalories} / {targetCal} kcal</p>
+            </div>
+          </div>
+
+          <div style={{display: 'flex', alignItems: 'center', gap: '15px', flex: 1}}>
+            <div style={{
+              width: '70px', height: '70px', borderRadius: '50%', 
+              background: `conic-gradient(#3b82f6 ${protPercent}%, #e2e8f0 0deg)`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '13px', color: '#0f172a'
+            }}>{Math.round(protPercent)}%</div>
+            <div>
+              <h4 style={{margin: 0, color: '#64748b', fontSize: '14px'}}>Protein Progress</h4>
+              <p style={{margin: '4px 0 0 0', fontWeight: 'bold', fontSize: '18px', color: '#0f172a'}}>{totalProtein} / {targetProt} g</p>
+            </div>
+          </div>
+        </section>
+
         <section className="stats-grid">
           <div className="stat-card">
-            <h3 style={{color: '#64748b'}}>Energy Balance</h3>
-            <div className="stat-value" style={{color: '#0f172a'}}>{totalCalories} <span className="unit">kcal</span></div>
-          </div>
-          <div className="stat-card">
-            <h3 style={{color: '#64748b'}}>Total Protein</h3>
-            <div className="stat-value" style={{color: '#0f172a'}}>{totalProtein} <span className="unit">g</span></div>
-          </div>
-          <div className="stat-card">
-            <h3 style={{color: '#64748b'}}>Carbohydrates</h3>
+            <h3 style={{color: '#64748b'}}>Total Carbs</h3>
             <div className="stat-value" style={{color: '#0f172a'}}>{totalCarbs} <span className="unit">g</span></div>
           </div>
           <div className="stat-card">
@@ -219,46 +254,57 @@ export default function App() {
         <div className="dashboard-layout">
           <div className="dashboard-main-panel">
             <h3 style={{marginBottom:'6px', color: '#0f172a', fontWeight: '700'}}>Log Daily Intake</h3>
-            <p className="panel-subtitle">Record and compile values into your running cloud cluster document node.</p>
+            
+            {/* ⚡ SHORTCUT BUTTON CHIPS ROW */}
+            <div style={{display: 'flex', gap: '8px', flexWrap: 'wrap', margin: '15px 0 20px 0'}}>
+              {shortcuts.map((item, idx) => (
+                <button 
+                  key={idx} 
+                  type="button" 
+                  onClick={() => applyShortcut(item)}
+                  style={{background: '#f1f5f9', border: 'none', color: '#334155', padding: '8px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s'}}
+                  onMouseOver={(e) => e.target.style.background = '#e2e8f0'}
+                  onMouseOut={(e) => e.target.style.background = '#f1f5f9'}
+                >
+                  {item.name}
+                </button>
+              ))}
+            </div>
 
             <form onSubmit={handleLogFood} className="meal-form">
               <div className="form-group">
                 <label>Food Item Title</label>
-                <input type="text" required value={foodName} onChange={(e) => setFoodName(e.target.value)} placeholder="e.g., Grilled Chicken with Basmati Rice" />
+                <input type="text" required value={foodName} onChange={(e) => setFoodName(e.target.value)} placeholder="e.g., Grilled Chicken Rice" />
               </div>
-
               <div className="form-grid">
                 <div className="form-group">
                   <label>Energy (kcal)</label>
-                  <input type="number" required value={calories} onChange={(e) => setCalories(e.target.value)} placeholder="400" />
+                  <input type="number" required value={calories} onChange={(e) => setCalories(e.target.value)} />
                 </div>
                 <div className="form-group">
                   <label>Protein (g)</label>
-                  <input type="number" required value={protein} onChange={(e) => setProtein(e.target.value)} placeholder="40" />
+                  <input type="number" required value={protein} onChange={(e) => setProtein(e.target.value)} />
                 </div>
               </div>
-
               <div className="form-grid">
                 <div className="form-group">
                   <label>Carbs (g)</label>
-                  <input type="number" required value={carbs} onChange={(e) => setCarbs(e.target.value)} placeholder="35" />
+                  <input type="number" required value={carbs} onChange={(e) => setCarbs(e.target.value)} />
                 </div>
                 <div className="form-group">
                   <label>Fats (g)</label>
-                  <input type="number" required value={fats} onChange={(e) => setFats(e.target.value)} placeholder="5" />
+                  <input type="number" required value={fats} onChange={(e) => setFats(e.target.value)} />
                 </div>
               </div>
-
               <div className="form-group">
                 <label>Meal Target Window</label>
                 <select value={mealWindow} onChange={(e) => setMealWindow(e.target.value)}>
                   <option value="Breakfast">Breakfast Allocation</option>
                   <option value="Lunch">Lunch Allocation</option>
                   <option value="Dinner">Dinner Allocation</option>
-                  <option value="Snack">Snacks / Other Supplementation</option>
+                  <option value="Snack">Snacks / Supplements</option>
                 </select>
               </div>
-
               <button type="submit" className="btn-primary">Log Entry Node</button>
             </form>
           </div>
@@ -269,17 +315,25 @@ export default function App() {
 
             <div className="meal-list">
               {loggedMeals.map((meal) => (
-                <div key={meal._id || meal.id} className="meal-item fade-in">
+                <div key={meal._id || meal.id} className="meal-item fade-in" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
                   <div className="meal-info">
                     <span className={`meal-tag ${meal.mealWindow.toLowerCase()}`}>{meal.mealWindow}</span>
-                    <h4 style={{color: '#0f172a'}}>{meal.foodName}</h4>
-                    <div className="meal-macros" style={{marginTop:'6px', fontSize:'11px'}}>
-                      <span>P: {meal.protein}g</span>
-                      <span>C: {meal.carbs}g</span>
-                      <span>F: {meal.fats}g</span>
+                    <h4 style={{color: '#0f172a', margin: '4px 0'}}>{meal.foodName}</h4>
+                    <div className="meal-macros" style={{fontSize:'11px', color: '#64748b'}}>
+                      <span>P: {meal.protein}g | C: {meal.carbs}g | F: {meal.fats}g</span>
                     </div>
                   </div>
-                  <div style={{fontWeight:700, color: '#0f172a'}}>{meal.calories} kcal</div>
+                  <div style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
+                    <div style={{fontWeight:700, color: '#0f172a'}}>{meal.calories} kcal</div>
+                    {/* 🗑️ TRASH ICON ICON TRIGGER */}
+                    <button 
+                      onClick={() => handleDeleteMeal(meal._id)}
+                      style={{background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '16px', padding: '4px'}}
+                      title="Delete Entry"
+                    >
+                      🗑️
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

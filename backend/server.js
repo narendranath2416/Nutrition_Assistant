@@ -10,11 +10,10 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// 🛡️ Middleware Architecture Configuration
 app.use(cors({ origin: '*' }));
 app.use(express.json());
 
-// 🗄️ DATABASE DATA CONFIGURATION SCHEMAS
+// 🗄️ DATABASE SCHEMAS
 const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
@@ -25,7 +24,7 @@ const userSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 const mealSchema = new mongoose.Schema({
-  userEmail: { type: String, required: true }, // Links meal items to the logged-in user session
+  userEmail: { type: String, required: true },
   foodName: { type: String, required: true },
   mealWindow: { type: String, required: true },
   calories: { type: Number, required: true },
@@ -37,7 +36,7 @@ const mealSchema = new mongoose.Schema({
 const User = mongoose.models.User || mongoose.model('User', userSchema);
 const Meal = mongoose.models.Meal || mongoose.model('Meal', mealSchema);
 
-// 🌐 ROUTE 1: USER REGISTRATION PIPELINE
+// 🌐 ROUTING ENDPOINTS
 app.post('/api/auth/register', async (req, res) => {
   try {
     const { email, password, age, weight, height, fitnessGoal } = req.body;
@@ -45,19 +44,14 @@ app.post('/api/auth/register', async (req, res) => {
     if (userExists) {
       return res.status(400).json({ message: 'Email address already registered in Atlas.' });
     }
-
     const newUser = new User({ email, password, age, weight, height, fitnessGoal });
     await newUser.save();
-    
-    console.log(`🔥 [Atlas User Sync] Profile recorded successfully: ${email}`);
     return res.status(201).json({ message: 'Profile created!' });
   } catch (err) {
-    console.error(err);
     return res.status(500).json({ message: 'Internal Server Error' });
   }
 });
 
-// 🌐 ROUTE 2: USER LOGIN CREDENTIAL VERIFICATION
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -71,35 +65,48 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
-// 🌐 ROUTE 3: PERSIST NEW DIETARY MEAL TO CLOUD
 app.post('/api/meals/log', async (req, res) => {
   try {
     const { userEmail, foodName, mealWindow, calories, protein, carbs, fats } = req.body;
     const newMeal = new Meal({ userEmail, foodName, mealWindow, calories, protein, carbs, fats });
     await newMeal.save();
-    
-    console.log(`📦 [Atlas Meal Sync] Food record logged for context: ${userEmail}`);
-    return res.status(201).json({ message: 'Meal document logged successfully!', newMeal });
+    return res.status(201).json({ message: 'Meal logged successfully!', newMeal });
   } catch (err) {
-    console.error(err);
     return res.status(500).json({ message: 'Failed to record tracking parameters.' });
   }
 });
 
-// 🌐 ROUTE 4: FETCH HISTORICAL MEALS STREAM FOR THE ACTIVE SESSION USER
 app.get('/api/meals/history/:email', async (req, res) => {
   try {
     const history = await Meal.find({ userEmail: req.params.email }).sort({ createdAt: -1 });
     return res.status(200).json(history);
   } catch (err) {
-    return res.status(500).json({ message: 'Failed to retrieve cloud ledger information.' });
+    return res.status(500).json({ message: 'Failed to retrieve ledger.' });
   }
 });
 
-// Mongoose Connection Orchestration
+// 🗑️ CONTROL ROUTE: DELETES A TARGET MEAL FROM MONGO ATLAS
+app.delete('/api/meals/delete/:id', async (req, res) => {
+  try {
+    const deletedDocument = await Meal.findByIdAndDelete(req.params.id);
+    if (!deletedDocument) {
+      return res.status(404).json({ message: "Document not found inside collection mapping." });
+    }
+    console.log(`🗑️ [Atlas Sync] Removed meal entry ID: ${req.params.id}`);
+    return res.status(200).json({ message: "Successfully dropped meal from cluster collection." });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Internal engine delete failure." });
+  }
+});
+
+app.get('/', (req, res) => {
+    res.send('Nutrition Assistant Cloud MERN Backend is Active!');
+});
+
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log("🔥 MongoDB Database Connected Successfully!");
-    app.listen(PORT, () => console.log(`🚀 Backend executing server listening on port: ${PORT}`));
+    app.listen(PORT, () => console.log(`🚀 Server executing on port: ${PORT}`));
   })
   .catch((err) => console.error("❌ Link dropped:", err.message));
