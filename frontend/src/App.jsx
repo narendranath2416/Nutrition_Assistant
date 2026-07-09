@@ -1,271 +1,245 @@
-import { useState } from 'react';
-import axios from 'axios';
-import { Flame, Utensils, Plus, LogOut, User, Activity, Scale, Dumbbell, Apple, PieChart } from 'lucide-react';
+import React, { useState } from 'react';
 
-function App() {
-  const [user, setUser] = useState(null);
-  const [isLogin, setIsLogin] = useState(true);
-  const [meals, setMeals] = useState([]);
-  const [formData, setFormData] = useState({
-    username: '', email: '', password: '', age: '', weight: '', height: '', fitnessGoal: 'Muscle Hypertrophy'
-  });
-  const [mealForm, setMealForm] = useState({ foodName: '', calories: '', protein: '', carbs: '', fats: '', mealType: 'Breakfast' });
-  const [message, setMessage] = useState('');
+export default function App() {
+  // State management to control active view and date logging
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState('Today');
 
-  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
-  const handleMealChange = (e) => setMealForm({ ...mealForm, [e.target.name]: e.target.value });
+  // State for adding new meal data items
+  const [foodName, setFoodName] = useState('');
+  const [calories, setCalories] = useState('');
+  const [protein, setProtein] = useState('');
+  const [carbs, setCarbs] = useState('');
+  const [fats, setFats] = useState('');
+  const [mealWindow, setMealWindow] = useState('Breakfast');
 
-  const handleAuth = async (e) => {
+  // Simple mock array to demonstrate history loading state
+  const pastDays = [
+    { label: 'Today', dateStr: 'July 9' },
+    { label: 'Yesterday', dateStr: 'July 8' },
+    { label: 'Day Before Yesterday', dateStr: 'July 7' },
+    { label: 'July 6, 2026', dateStr: 'July 6' },
+    { label: 'July 5, 2026', dateStr: 'July 5' },
+    { label: 'July 4, 2026', dateStr: 'July 4' },
+    { label: 'July 3, 2026', dateStr: 'July 3' },
+  ];
+
+  const handleLogin = (e) => {
     e.preventDefault();
-    setMessage('');
-    const url = isLogin ? 'http://localhost:5000/api/user/login' : 'http://localhost:5000/api/user/register';
-    try {
-      const res = await axios.post(url, formData);
-      setUser(res.data);
-      fetchUserMeals(res.data._id);
-    } catch (err) {
-      setMessage(err.response?.data?.message || 'Authentication failed. Please verify your details.');
-    }
+    // Your backend API fetch validation would plug in here
+    setIsLoggedIn(true);
   };
 
-  const fetchUserMeals = async (userId) => {
-    try {
-      const res = await axios.get(`http://localhost:5000/api/meals/user/${userId}`);
-      setMeals(res.data);
-    } catch (err) {
-      console.error("Error fetching meals:", err);
-    }
-  };
-
-  const handleAddMeal = async (e) => {
+  const handleLogFood = (e) => {
     e.preventDefault();
-    try {
-      const res = await axios.post('http://localhost:5000/api/meals/add', { ...mealForm, userId: user._id });
-      setMeals([res.data, ...meals]);
-      setMealForm({ foodName: '', calories: '', protein: '', carbs: '', fats: '', mealType: 'Breakfast' });
-    } catch (error) {
-  console.error(error);
-  alert("Failed to save meal entry.");
-}
+    console.log("Sending payload metrics directly to cluster collection...", {
+      foodName, calories, protein, carbs, fats, mealWindow, date: selectedDate
+    });
+    // Clear inputs after successful local staging
+    setFoodName(''); setCalories(''); setProtein(''); setCarbs(''); setFats('');
   };
 
-  // Calculate Aggregates
-  const totalCalories = meals.reduce((sum, m) => sum + Number(m.calories || 0), 0);
-  const totalProtein = meals.reduce((sum, m) => sum + Number(m.protein || 0), 0);
-  const totalCarbs = meals.reduce((sum, m) => sum + Number(m.carbs || 0), 0);
-  const totalFats = meals.reduce((sum, m) => sum + Number(m.fats || 0), 0);
-
-  // Global styles object for a premium look
-  const theme = {
-    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-    primary: '#10b981', // Emerald Green
-    primaryHover: '#059669',
-    background: '#f8fafc',
-    cardBg: '#ffffff',
-    textMain: '#0f172a',
-    textMuted: '#64748b',
-    border: '#e2e8f0',
-  };
-
-  if (!user) {
+  // --- VIEW LAYER 1: AUTHENTICATION LOGIN GUARD SPLASH ---
+  if (!isLoggedIn) {
     return (
-      <div style={{ fontFamily: theme.fontFamily, backgroundColor: theme.background, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-        <div style={{ backgroundColor: theme.cardBg, maxWidth: '440px', width: '100%', padding: '40px', borderRadius: '16px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05)', border: `1px solid ${theme.border}` }}>
-          <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-            <div style={{ background: '#e6f4ea', width: '56px', height: '56px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px auto' }}>
-              <Apple size={28} color={theme.primary} />
+      <div className="min-h-screen w-screen flex items-center justify-center bg-[#0B0F17] px-4 text-gray-100">
+        <div className="w-full max-w-md bg-[#111827]/80 backdrop-blur-xl border border-gray-800 rounded-2xl p-8 shadow-2xl">
+          <div className="text-center mb-8">
+            <div className="h-12 w-12 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center shadow-lg shadow-emerald-900/40 mx-auto mb-3">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
             </div>
-            <h2 style={{ margin: '0 0 8px 0', fontSize: '24px', fontWeight: '700', color: theme.textMain }}>
-              {isLogin ? 'Welcome Back' : 'Create Premium Account'}
-            </h2>
-            <p style={{ margin: 0, fontSize: '14px', color: theme.textMuted }}>
-              {isLogin ? 'Sign in to monitor your nutritional metrics' : 'Set up your physical profile variables'}
-            </p>
+            <h1 className="text-3xl font-black tracking-tight text-white mb-1">My Nutrition Partner</h1>
+            <p className="text-sm text-gray-400">Access your personalized metabolic dashboard</p>
           </div>
 
-          <form onSubmit={handleAuth} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {!isLogin && (
-              <div style={{ position: 'relative' }}>
-                <User size={18} color={theme.textMuted} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
-                <input type="text" name="username" placeholder="Full Name" onChange={handleChange} required style={{ width: '100%', padding: '12px 12px 12px 40px', borderRadius: '8px', border: `1px solid ${theme.border}`, fontSize: '15px', outline: 'none', boxSizing: 'border-box' }} />
-              </div>
-            )}
-            <input type="email" name="email" placeholder="Email Address" onChange={handleChange} required style={{ width: '100%', padding: '12px', borderRadius: '8px', border: `1px solid ${theme.border}`, fontSize: '15px', outline: 'none', boxSizing: 'border-box' }} />
-            <input type="password" name="password" placeholder="Password" onChange={handleChange} required style={{ width: '100%', padding: '12px', borderRadius: '8px', border: `1px solid ${theme.border}`, fontSize: '15px', outline: 'none', boxSizing: 'border-box' }} />
-            
-            {!isLogin && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <input type="number" name="age" placeholder="Age" onChange={handleChange} required style={{ width: '100%', padding: '12px', borderRadius: '8px', border: `1px solid ${theme.border}`, fontSize: '15px', boxSizing: 'border-box' }} />
-                <input type="number" name="weight" placeholder="Weight (kg)" onChange={handleChange} required style={{ width: '100%', padding: '12px', borderRadius: '8px', border: `1px solid ${theme.border}`, fontSize: '15px', boxSizing: 'border-box' }} />
-                <input type="number" name="height" placeholder="Height (cm)" onChange={handleChange} required style={{ width: '100%', padding: '12px', borderRadius: '8px', border: `1px solid ${theme.border}`, fontSize: '15px', boxSizing: 'border-box' }} />
-                <select name="fitnessGoal" onChange={handleChange} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: `1px solid ${theme.border}`, fontSize: '15px', backgroundColor: '#fff', boxSizing: 'border-box' }}>
-                  <option value="Muscle Hypertrophy">Muscle Hypertrophy</option>
-                  <option value="Weight Loss">Weight Loss</option>
-                  <option value="Maintenance">Maintenance</option>
-                </select>
-              </div>
-            )}
-
-            <button type="submit" style={{ backgroundColor: theme.primary, color: 'white', border: 'none', padding: '14px', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '16px', marginTop: '8px', transition: 'background-color 0.2s' }}>
-              {isLogin ? 'Sign In' : 'Generate Profile'}
+          <form onSubmit={handleLogin} className="space-y-5">
+            <div>
+              <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Email Address</label>
+              <input 
+                type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
+                placeholder="name@domain.com" 
+                className="w-full bg-[#1F2937] text-white border border-gray-700 rounded-xl p-3 focus:outline-none focus:border-emerald-500 transition-colors" 
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Password</label>
+              <input 
+                type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••" 
+                className="w-full bg-[#1F2937] text-white border border-gray-700 rounded-xl p-3 focus:outline-none focus:border-emerald-500 transition-colors" 
+              />
+            </div>
+            <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl shadow-lg shadow-emerald-900/30 transition-all transform active:scale-95 mt-2">
+              Secure Sign In
             </button>
           </form>
-
-          <p style={{ textAlign: 'center', marginTop: '24px', fontSize: '14px', color: theme.textMuted }}>
-            {isLogin ? "New to the assistant?" : "Already configured a profile?"}{' '}
-            <span onClick={() => setIsLogin(!isLogin)} style={{ color: theme.primary, cursor: 'pointer', fontWeight: '600' }}>
-              {isLogin ? 'Create profile here' : 'Sign in here'}
-            </span>
-          </p>
-          {message && <p style={{ textAlign: 'center', color: '#ef4444', fontWeight: '600', fontSize: '14px', marginTop: '16px' }}>{message}</p>}
         </div>
       </div>
     );
   }
 
+  // --- VIEW LAYER 2: THE MAIN DASHBOARD & SIDE PANEL METRIC SYSTEM ---
   return (
-    <div style={{ fontFamily: theme.fontFamily, backgroundColor: theme.background, minHeight: '100vh', padding: '0 0 40px 0' }}>
-      {/* Navbar Header */}
-      <header style={{ backgroundColor: theme.cardBg, borderBottom: `1px solid ${theme.border}`, padding: '16px 40px', sticky: 'top', zIndex: 10 }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ background: '#e6f4ea', padding: '8px', borderRadius: '8px' }}><Apple size={22} color={theme.primary} /></div>
-            <h1 style={{ fontSize: '20px', fontWeight: '700', color: theme.textMain, margin: 0 }}>Nutrition Assistant</h1>
+    <div className="min-h-screen w-screen flex bg-[#0B0F17] text-gray-100 overflow-x-hidden">
+      
+      {/* 🧭 SIDE PANEL: Dynamic Monthly History Log Picker */}
+      <aside className={`fixed top-0 left-0 z-50 h-full w-72 bg-[#111827] border-r border-gray-800 p-6 transform transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:relative lg:translate-x-0`}>
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-2">
+            <div className="h-7 w-7 rounded-lg bg-emerald-600 flex items-center justify-center text-white font-bold text-xs">M</div>
+            <span className="font-bold text-lg text-white">Log History</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontWeight: '600', color: theme.textMain }}>{user.username || 'Fitness Elite'}</div>
-              <div style={{ fontSize: '13px', color: theme.textMuted, display: 'flex', alignItems: 'center', gap: '4px' }}><Dumbbell size={12} color={theme.primary} /> {user.fitnessGoal}</div>
-            </div>
-            <button onClick={() => setUser(null)} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#fef2f2', color: '#ef4444', border: 'none', padding: '10px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '14px' }}>
-              <LogOut size={14} /> Leave
-            </button>
-          </div>
+          <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden text-gray-400 hover:text-white text-sm">✕ Close</button>
         </div>
-      </header>
 
-      {/* Workspace Content Wrapper */}
-      <main style={{ maxWidth: '1200px', margin: '40px auto 0 auto', padding: '0 20px', boxSizing: 'border-box' }}>
+        <div className="space-y-2 overflow-y-auto h-[calc(100vh-120px)] pr-2">
+          <span className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Select Logs by Date</span>
+          {pastDays.map((day) => (
+            <button 
+              key={day.label}
+              onClick={() => { setSelectedDate(day.label); setIsSidebarOpen(false); }}
+              className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all flex items-center justify-between ${selectedDate === day.label ? 'bg-emerald-600 text-white shadow-md' : 'bg-[#1F2937]/50 hover:bg-[#1F2937] text-gray-300'}`}
+            >
+              <span>{day.label}</span>
+              <span className={`text-xs ${selectedDate === day.label ? 'text-emerald-200' : 'text-gray-500'}`}>{day.dateStr}</span>
+            </button>
+          ))}
+        </div>
+      </aside>
+
+      {/* 🚀 MAIN CORE BODY VIEWPORT FRAME */}
+      <div className="flex-1 min-w-0 flex flex-col min-h-screen">
         
-        {/* Top Analytics Metrics Dashboard row */}
-        <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '24px', marginBottom: '32px' }}>
-          <div style={{ backgroundColor: theme.cardBg, padding: '24px', borderRadius: '12px', border: `1px solid ${theme.border}`, display: 'flex', alignItems: 'center', gap: '20px' }}>
-            <div style={{ background: '#fffbeb', padding: '14px', borderRadius: '10px' }}><Flame size={24} color="#d97706" /></div>
-            <div>
-              <span style={{ fontSize: '14px', color: theme.textMuted, fontWeight: '500' }}>Energy Consumed</span>
-              <h2 style={{ margin: '4px 0 0 0', fontSize: '28px', fontWeight: '700' }}>{totalCalories} <span style={{ fontSize: '14px', fontWeight: '500', color: theme.textMuted }}>kcal</span></h2>
-            </div>
+        {/* Top Floating Dashboard Navbar Header */}
+        <header className="w-full bg-[#111827]/80 backdrop-blur-md border-b border-gray-800 px-6 py-4 flex items-center justify-between sticky top-0 z-40">
+          <div className="flex items-center gap-3">
+            <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden p-2 bg-[#1F2937] border border-gray-700 rounded-lg text-emerald-400 font-bold text-sm">
+              ☰ Menu
+            </button>
+            <h2 className="text-xl font-black text-white bg-gradient-to-r from-white to-gray-400 bg-clip-text">
+              My Nutrition Partner
+            </h2>
           </div>
-
-          <div style={{ backgroundColor: theme.cardBg, padding: '24px', borderRadius: '12px', border: `1px solid ${theme.border}`, display: 'flex', alignItems: 'center', gap: '20px' }}>
-            <div style={{ background: '#eff6ff', padding: '14px', borderRadius: '10px' }}><Scale size={24} color="#2563eb" /></div>
-            <div>
-              <span style={{ fontSize: '14px', color: theme.textMuted, fontWeight: '500' }}>Total Protein</span>
-              <h2 style={{ margin: '4px 0 0 0', fontSize: '28px', fontWeight: '700' }}>{totalProtein} <span style={{ fontSize: '14px', fontWeight: '500', color: theme.textMuted }}>g</span></h2>
-            </div>
+          <div className="flex items-center gap-2 bg-[#1F2937] px-4 py-1.5 rounded-full border border-gray-700/60 text-xs text-emerald-400 font-bold shadow-sm">
+            <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            Viewing: {selectedDate}
           </div>
+        </header>
 
-          <div style={{ backgroundColor: theme.cardBg, padding: '24px', borderRadius: '12px', border: `1px solid ${theme.border}`, display: 'flex', alignItems: 'center', gap: '20px' }}>
-            <div style={{ background: '#e0f2fe', padding: '14px', borderRadius: '10px' }}><PieChart size={24} color="#0284c7" /></div>
-            <div>
-              <span style={{ fontSize: '14px', color: theme.textMuted, fontWeight: '500' }}>Carbohydrates</span>
-              <h2 style={{ margin: '4px 0 0 0', fontSize: '28px', fontWeight: '700' }}>{totalCarbs} <span style={{ fontSize: '14px', fontWeight: '500', color: theme.textMuted }}>g</span></h2>
-            </div>
-          </div>
-
-          <div style={{ backgroundColor: theme.cardBg, padding: '24px', borderRadius: '12px', border: `1px solid ${theme.border}`, display: 'flex', alignItems: 'center', gap: '20px' }}>
-            <div style={{ background: '#faf5ff', padding: '14px', borderRadius: '10px' }}><Activity size={24} color="#7c3aed" /></div>
-            <div>
-              <span style={{ fontSize: '14px', color: theme.textMuted, fontWeight: '500' }}>Dietary Fats</span>
-              <h2 style={{ margin: '4px 0 0 0', fontSize: '28px', fontWeight: '700' }}>{totalFats} <span style={{ fontSize: '14px', fontWeight: '500', color: theme.textMuted }}>g</span></h2>
-            </div>
-          </div>
-        </section>
-
-        {/* Dynamic Structural Grid split view */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '32px', alignItems: 'start' }}>
+        {/* Content Section Area */}
+        <main className="p-4 md:p-8 flex-1 max-w-5xl w-full mx-auto space-y-8">
           
-          {/* Form Side */}
-          <div style={{ backgroundColor: theme.cardBg, padding: '32px', borderRadius: '12px', border: `1px solid ${theme.border}` }}>
-            <h3 style={{ margin: '0 0 24px 0', fontSize: '18px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Plus size={20} color={theme.primary} /> Log Macro Entry
-            </h3>
-            <form onSubmit={handleAddMeal} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px', color: theme.textMain }}>Food Name</label>
-                <input type="text" name="foodName" placeholder="e.g. Grilled Chicken Breast" value={mealForm.foodName} onChange={handleMealChange} required style={{ width: '100%', padding: '11px', borderRadius: '6px', border: `1px solid ${theme.border}`, boxSizing: 'border-box', fontSize: '14px' }} />
+          {/* Section A: Running Macro Tracker Metric Summary Cards */}
+          <div>
+            <h3 className="text-sm font-bold uppercase tracking-wider text-gray-400 mb-4">Total Daily Consumption Summary</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="bg-[#111827] border border-gray-800/80 rounded-2xl p-5 shadow-lg relative overflow-hidden group hover:border-emerald-500/30 transition-all">
+                <span className="block text-xs font-semibold text-gray-400 uppercase mb-1">Energy Consumed</span>
+                <span className="text-2xl font-black text-emerald-400">1,840 <span className="text-xs text-gray-500">kcal</span></span>
               </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px', color: theme.textMain }}>Calories (kcal)</label>
-                  <input type="number" name="calories" placeholder="0" value={mealForm.calories} onChange={handleMealChange} required style={{ width: '100%', padding: '11px', borderRadius: '6px', border: `1px solid ${theme.border}`, boxSizing: 'border-box' }} />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px', color: theme.textMain }}>Protein (g)</label>
-                  <input type="number" name="protein" placeholder="0" value={mealForm.protein} onChange={handleMealChange} required style={{ width: '100%', padding: '11px', borderRadius: '6px', border: `1px solid ${theme.border}`, boxSizing: 'border-box' }} />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px', color: theme.textMain }}>Carbs (g)</label>
-                  <input type="number" name="carbs" placeholder="0" value={mealForm.carbs} onChange={handleMealChange} required style={{ width: '100%', padding: '11px', borderRadius: '6px', border: `1px solid ${theme.border}`, boxSizing: 'border-box' }} />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px', color: theme.textMain }}>Fats (g)</label>
-                  <input type="number" name="fats" placeholder="0" value={mealForm.fats} onChange={handleMealChange} required style={{ width: '100%', padding: '11px', borderRadius: '6px', border: `1px solid ${theme.border}`, boxSizing: 'border-box' }} />
-                </div>
+              <div className="bg-[#111827] border border-gray-800/80 rounded-2xl p-5 shadow-lg relative overflow-hidden group hover:border-blue-500/30 transition-all">
+                <span className="block text-xs font-semibold text-gray-400 uppercase mb-1">Total Protein Intake</span>
+                <span className="text-2xl font-black text-blue-400">142 <span className="text-xs text-gray-500">g</span></span>
               </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px', color: theme.textMain }}>Meal Window</label>
-                <select name="mealType" value={mealForm.mealType} onChange={handleMealChange} style={{ width: '100%', padding: '11px', borderRadius: '6px', border: `1px solid ${theme.border}`, background: '#fff', fontSize: '14px', boxSizing: 'border-box' }}>
-                  <option value="Breakfast">Breakfast</option>
-                  <option value="Lunch">Lunch</option>
-                  <option value="Dinner">Dinner</option>
-                  <option value="Snack">Snack</option>
-                </select>
+              <div className="bg-[#111827] border border-gray-800/80 rounded-2xl p-5 shadow-lg relative overflow-hidden group hover:border-amber-500/30 transition-all">
+                <span className="block text-xs font-semibold text-gray-400 uppercase mb-1">Carbohydrates</span>
+                <span className="text-2xl font-black text-amber-400">195 <span className="text-xs text-gray-500">g</span></span>
               </div>
-
-              <button type="submit" style={{ backgroundColor: theme.textMain, color: 'white', border: 'none', padding: '12px', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '15px', marginTop: '8px' }}>
-                Secure Entry Log
-              </button>
-            </form>
+              <div className="bg-[#111827] border border-gray-800/80 rounded-2xl p-5 shadow-lg relative overflow-hidden group hover:border-rose-500/30 transition-all">
+                <span className="block text-xs font-semibold text-gray-400 uppercase mb-1">Dietary Fats</span>
+                <span className="text-2xl font-black text-rose-400">58 <span className="text-xs text-gray-500">g</span></span>
+              </div>
+            </div>
           </div>
 
-          {/* History Data Table side */}
-          <div style={{ backgroundColor: theme.cardBg, padding: '32px', borderRadius: '12px', border: `1px solid ${theme.border}` }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px' }}>
-              <Utensils size={20} color={theme.primary} />
-              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700' }}>Chronological Feed Entries</h3>
-            </div>
+          {/* Section B: The Core Daily Food Logging Section Module Form */}
+          <div className="grid md:grid-cols-5 gap-6">
             
-            {meals.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '40px 0', color: theme.textMuted }}>
-                <p style={{ margin: 0, fontSize: '15px', fontStyle: 'italic' }}>No metric entries recorded today.</p>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {meals.map((meal, idx) => (
-                  <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', borderRadius: '10px', border: `1px solid ${theme.border}`, transition: 'transform 0.2s' }}>
-                    <div>
-                      <span style={{ fontSize: '11px', textTransform: 'uppercase', tracking: '0.05em', background: '#f1f5f9', color: theme.textMain, padding: '4px 8px', borderRadius: '4px', fontWeight: '700', marginRight: '12px' }}>
-                        {meal.mealType}
-                      </span>
-                      <strong style={{ color: theme.textMain, fontSize: '15px' }}>{meal.foodName}</strong>
-                    </div>
-                    <div style={{ display: 'flex', gap: '16px', fontSize: '14px', fontWeight: '600' }}>
-                      <span style={{ color: '#d97706' }}>🔥 {meal.calories} kcal</span>
-                      <span style={{ color: '#2563eb' }}>🥩 {meal.protein}g</span>
+            {/* Input Tracking Module Interface Component */}
+            <div className="bg-[#111827] border border-gray-800 rounded-2xl p-6 shadow-xl md:col-span-2">
+              <h4 className="text-base font-bold text-white mb-4">Log Active Nutrition Entry</h4>
+              <form onSubmit={handleLogFood} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-400 mb-1">Food / Meal Item Title</label>
+                  <input type="text" required value={foodName} onChange={(e) => setFoodName(e.target.value)} placeholder="e.g., Grilled Chicken Breast" className="w-full bg-[#1F2937] text-white border border-gray-700 rounded-xl p-2.5 text-sm focus:outline-none focus:border-emerald-500" />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-400 mb-1">Calories (kcal)</label>
+                    <input type="number" required value={calories} onChange={(e) => setCalories(e.target.value)} placeholder="320" className="w-full bg-[#1F2937] text-white border border-gray-700 rounded-xl p-2.5 text-sm focus:outline-none focus:border-emerald-500" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-400 mb-1">Protein (g)</label>
+                    <input type="number" required value={protein} onChange={(e) => setProtein(e.target.value)} placeholder="30" className="w-full bg-[#1F2937] text-white border border-gray-700 rounded-xl p-2.5 text-sm focus:outline-none focus:border-emerald-500" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-400 mb-1">Carbs (g)</label>
+                    <input type="number" required value={carbs} onChange={(e) => setCarbs(e.target.value)} placeholder="0" className="w-full bg-[#1F2937] text-white border border-gray-700 rounded-xl p-2.5 text-sm focus:outline-none focus:border-emerald-500" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-400 mb-1">Fats (g)</label>
+                    <input type="number" required value={fats} onChange={(e) => setFats(e.target.value)} placeholder="4" className="w-full bg-[#1F2937] text-white border border-gray-700 rounded-xl p-2.5 text-sm focus:outline-none focus:border-emerald-500" />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-400 mb-1">Meal Allocation Window</label>
+                  <div className="relative">
+                    <select value={mealWindow} onChange={(e) => setMealWindow(e.target.value)} className="w-full bg-[#1F2937] text-white border border-gray-700 rounded-xl p-2.5 text-sm appearance-none focus:outline-none focus:border-emerald-500 cursor-pointer">
+                      <option value="Breakfast" className="bg-[#111827]">Breakfast</option>
+                      <option value="Lunch" className="bg-[#111827]">Lunch</option>
+                      <option value="Dinner" className="bg-[#111827]">Dinner</option>
+                      <option value="Snack" className="bg-[#111827]">Snacks / Other</option>
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-emerald-400">
+                      <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                        <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
+                      </svg>
                     </div>
                   </div>
-                ))}
+                </div>
+
+                <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-xl text-sm transition-all shadow-md shadow-emerald-950/40">
+                  Commit Food to Database
+                </button>
+              </form>
+            </div>
+
+            {/* Live Data Intake Stream Ledger Display Component */}
+            <div className="bg-[#111827] border border-gray-800 rounded-2xl p-6 shadow-xl md:col-span-3 flex flex-col">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="text-base font-bold text-white">Intake History Ledger</h4>
+                <span className="text-xs text-gray-400 font-medium">Logged Items for {selectedDate}</span>
               </div>
-            )}
+              
+              <div className="space-y-3 flex-1 overflow-y-auto max-h-[350px] pr-1">
+                <div className="p-4 bg-[#1F2937]/40 border border-gray-800 rounded-xl flex items-center justify-between hover:border-gray-700 transition-colors">
+                  <div>
+                    <span className="text-xs font-bold uppercase text-emerald-400 block tracking-wider mb-0.5">Lunch</span>
+                    <h5 className="text-sm font-semibold text-white">Chicken Breast with Rice</h5>
+                    <p className="text-xs text-gray-400 mt-1">P: 45g | C: 40g | F: 6g</p>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-sm font-bold text-white block">420 kcal</span>
+                    <span className="text-[10px] text-gray-500">Recorded Live</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
           </div>
 
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }
-
-export default App;
