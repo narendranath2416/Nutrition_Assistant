@@ -1,14 +1,20 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
+import './App.css'; // Connects directly to external stylesheet variables
 
 export default function App() {
-  // State management to control active view and date logging
+  // Session Access States
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [authTab, setAuthTab] = useState('login');
+  
+  // Registration Profile States
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [selectedDate, setSelectedDate] = useState('Today');
+  const [age, setAge] = useState('20');
+  const [weight, setWeight] = useState('76');
+  const [height, setHeight] = useState('194');
+  const [fitnessGoal, setFitnessGoal] = useState('hypertrophy');
 
-  // State for adding new meal data items
+  // Input Data Form States
   const [foodName, setFoodName] = useState('');
   const [calories, setCalories] = useState('');
   const [protein, setProtein] = useState('');
@@ -16,230 +22,270 @@ export default function App() {
   const [fats, setFats] = useState('');
   const [mealWindow, setMealWindow] = useState('Breakfast');
 
-  // Simple mock array to demonstrate history loading state
-  const pastDays = [
-    { label: 'Today', dateStr: 'July 9' },
-    { label: 'Yesterday', dateStr: 'July 8' },
-    { label: 'Day Before Yesterday', dateStr: 'July 7' },
-    { label: 'July 6, 2026', dateStr: 'July 6' },
-    { label: 'July 5, 2026', dateStr: 'July 5' },
-    { label: 'July 4, 2026', dateStr: 'July 4' },
-    { label: 'July 3, 2026', dateStr: 'July 3' },
-  ];
+  // Active Sync Ledger Stream Array 
+  const [loggedMeals, setLoggedMeals] = useState([]);
 
-  const handleLogin = (e) => {
+  // Fetch the live database logs array whenever a user successfully authenticates
+  useEffect(() => {
+    if (isLoggedIn && email) {
+      fetch(`http://localhost:5000/api/meals/history/${email}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (Array.isArray(data)) setLoggedMeals(data);
+        })
+        .catch((err) => console.error("Error synchronizing tracking history:", err));
+    }
+  }, [isLoggedIn, email]);
+
+  // Dynamic Live Aggregate Value Math Calculations
+  const totalCalories = loggedMeals.reduce((sum, item) => sum + (Number(item.calories) || 0), 0);
+  const totalProtein = loggedMeals.reduce((sum, item) => sum + (Number(item.protein) || 0), 0);
+  const totalCarbs = loggedMeals.reduce((sum, item) => sum + (Number(item.carbs) || 0), 0);
+  const totalFats = loggedMeals.reduce((sum, item) => sum + (Number(item.fats) || 0), 0);
+
+  // User Profile Cloud Insertion Submission
+  const handleAuthSubmit = async (e) => {
     e.preventDefault();
-    // Your backend API fetch validation would plug in here
-    setIsLoggedIn(true);
+    const endpoint = authTab === 'login' ? '/api/auth/login' : '/api/auth/register';
+    const payload = authTab === 'login' 
+      ? { email, password }
+      : { email, password, age: Number(age), weight: Number(weight), height: Number(height), fitnessGoal };
+
+    try {
+      const response = await fetch(`http://localhost:5000${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setIsLoggedIn(true);
+      } else {
+        alert(data.message || "Authentication layer rejected the request parameters.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Cannot talk to backend on port 5000. Is server.js active?");
+    }
   };
 
-  const handleLogFood = (e) => {
+  // Dietary Food Document Cloud Integration Pipeline
+  const handleLogFood = async (e) => {
     e.preventDefault();
-    console.log("Sending payload metrics directly to cluster collection...", {
-      foodName, calories, protein, carbs, fats, mealWindow, date: selectedDate
-    });
-    // Clear inputs after successful local staging
-    setFoodName(''); setCalories(''); setProtein(''); setCarbs(''); setFats('');
+    const payload = {
+      userEmail: email, // Associate this tracking row with this active user profile
+      foodName,
+      mealWindow,
+      calories: Number(calories) || 0,
+      protein: Number(protein) || 0,
+      carbs: Number(carbs) || 0,
+      fats: Number(fats) || 0
+    };
+
+    try {
+      const response = await fetch('http://localhost:5000/api/meals/log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.newMeal) {
+        // Unshift the successfully returned document payload directly into state
+        setLoggedMeals([data.newMeal, ...loggedMeals]);
+        setFoodName(''); setCalories(''); setProtein(''); setCarbs(''); setFats('');
+      } else {
+        alert("Failed to commit food record document map to database cluster collections.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Network dropped during data sync collection write transaction sequence.");
+    }
   };
 
-  // --- VIEW LAYER 1: AUTHENTICATION LOGIN GUARD SPLASH ---
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    setLoggedMeals([]);
+    setEmail(''); setPassword('');
+  };
+
   if (!isLoggedIn) {
     return (
-      <div className="min-h-screen w-screen flex items-center justify-center bg-[#0B0F17] px-4 text-gray-100">
-        <div className="w-full max-w-md bg-[#111827]/80 backdrop-blur-xl border border-gray-800 rounded-2xl p-8 shadow-2xl">
-          <div className="text-center mb-8">
-            <div className="h-12 w-12 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center shadow-lg shadow-emerald-900/40 mx-auto mb-3">
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-            </div>
-            <h1 className="text-3xl font-black tracking-tight text-white mb-1">My Nutrition Partner</h1>
-            <p className="text-sm text-gray-400">Access your personalized metabolic dashboard</p>
+      <div className="auth-screen-container">
+        <div className="auth-glass-card">
+          <div className="auth-brand">
+            <span className="auth-brand-icon">⚡</span>
+            <h2>My Nutrition Partner</h2>
+            <p className="auth-subtitle">Sign in to your dashboard</p>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-5">
-            <div>
-              <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Email Address</label>
-              <input 
-                type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
-                placeholder="name@domain.com" 
-                className="w-full bg-[#1F2937] text-white border border-gray-700 rounded-xl p-3 focus:outline-none focus:border-emerald-500 transition-colors" 
-              />
+          <div className="auth-tabs">
+            <button type="button" className={`auth-tab-btn ${authTab === 'login' ? 'active-tab' : ''}`} onClick={() => setAuthTab('login')}>Sign In</button>
+            <button type="button" className={`auth-tab-btn ${authTab === 'register' ? 'active-tab' : ''}`} onClick={() => setAuthTab('register')}>Register</button>
+          </div>
+
+          <form onSubmit={handleAuthSubmit} className="auth-native-form">
+            <div className="auth-input-group">
+              <label>Email Address</label>
+              <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@domain.com" />
             </div>
-            <div>
-              <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Password</label>
-              <input 
-                type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••" 
-                className="w-full bg-[#1F2937] text-white border border-gray-700 rounded-xl p-3 focus:outline-none focus:border-emerald-500 transition-colors" 
-              />
+            <div className="auth-input-group">
+              <label>Password</label>
+              <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
             </div>
-            <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl shadow-lg shadow-emerald-900/30 transition-all transform active:scale-95 mt-2">
-              Secure Sign In
-            </button>
+
+            {authTab === 'register' && (
+              <div className="fade-in" style={{display:'flex', flexDirection:'column', gap:'1.25rem'}}>
+                <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px'}}>
+                  <div className="auth-input-group">
+                    <label>Age</label>
+                    <input type="number" value={age} onChange={(e) => setAge(e.target.value)} />
+                  </div>
+                  <div className="auth-input-group">
+                    <label>Weight (kg)</label>
+                    <input type="number" value={weight} onChange={(e) => setWeight(e.target.value)} />
+                  </div>
+                </div>
+                <div className="auth-input-group">
+                  <label>Height (cm)</label>
+                  <input type="number" value={height} onChange={(e) => setHeight(e.target.value)} />
+                </div>
+                <div className="auth-input-group">
+                  <label>Target Objective</label>
+                  <select value={fitnessGoal} onChange={(e) => setFitnessGoal(e.target.value)}>
+                    <option value="hypertrophy">Muscle Hypertrophy Focus</option>
+                    <option value="weight_loss">Weight Loss Strategy</option>
+                  </select>
+                </div>
+              </div>
+            )}
+            <button type="submit" className="auth-submit-btn">{authTab === 'login' ? 'Log In' : 'Create Account'}</button>
           </form>
         </div>
       </div>
     );
   }
 
-  // --- VIEW LAYER 2: THE MAIN DASHBOARD & SIDE PANEL METRIC SYSTEM ---
   return (
-    <div className="min-h-screen w-screen flex bg-[#0B0F17] text-gray-100 overflow-x-hidden">
-      
-      {/* 🧭 SIDE PANEL: Dynamic Monthly History Log Picker */}
-      <aside className={`fixed top-0 left-0 z-50 h-full w-72 bg-[#111827] border-r border-gray-800 p-6 transform transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:relative lg:translate-x-0`}>
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-2">
-            <div className="h-7 w-7 rounded-lg bg-emerald-600 flex items-center justify-center text-white font-bold text-xs">M</div>
-            <span className="font-bold text-lg text-white">Log History</span>
-          </div>
-          <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden text-gray-400 hover:text-white text-sm">✕ Close</button>
+    <div className="app-container">
+      <aside className="sidebar">
+        <div className="logo-section">
+          <span className="logo-icon">⚡</span>
+          <h2>Nutrition App</h2>
         </div>
-
-        <div className="space-y-2 overflow-y-auto h-[calc(100vh-120px)] pr-2">
-          <span className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Select Logs by Date</span>
-          {pastDays.map((day) => (
-            <button 
-              key={day.label}
-              onClick={() => { setSelectedDate(day.label); setIsSidebarOpen(false); }}
-              className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all flex items-center justify-between ${selectedDate === day.label ? 'bg-emerald-600 text-white shadow-md' : 'bg-[#1F2937]/50 hover:bg-[#1F2937] text-gray-300'}`}
-            >
-              <span>{day.label}</span>
-              <span className={`text-xs ${selectedDate === day.label ? 'text-emerald-200' : 'text-gray-500'}`}>{day.dateStr}</span>
-            </button>
-          ))}
+        <nav className="nav-menu">
+          <button className="active">Dashboard Hub</button>
+        </nav>
+        <div className="sidebar-footer">
+          <p>MERN Pipeline Node</p>
+          <p style={{opacity: 0.4, marginTop:'4px'}}>Cloud Status: Syncing</p>
         </div>
       </aside>
 
-      {/* 🚀 MAIN CORE BODY VIEWPORT FRAME */}
-      <div className="flex-1 min-w-0 flex flex-col min-h-screen">
-        
-        {/* Top Floating Dashboard Navbar Header */}
-        <header className="w-full bg-[#111827]/80 backdrop-blur-md border-b border-gray-800 px-6 py-4 flex items-center justify-between sticky top-0 z-40">
-          <div className="flex items-center gap-3">
-            <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden p-2 bg-[#1F2937] border border-gray-700 rounded-lg text-emerald-400 font-bold text-sm">
-              ☰ Menu
-            </button>
-            <h2 className="text-xl font-black text-white bg-gradient-to-r from-white to-gray-400 bg-clip-text">
-              My Nutrition Partner
-            </h2>
+      <main className="main-content">
+        <header className="main-header">
+          <div>
+            <h1 style={{color: '#0f172a'}}>My Nutrition Partner</h1>
+            <p className="subtitle">Real-time daily dietary tracking ledger</p>
           </div>
-          <div className="flex items-center gap-2 bg-[#1F2937] px-4 py-1.5 rounded-full border border-gray-700/60 text-xs text-emerald-400 font-bold shadow-sm">
-            <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            Viewing: {selectedDate}
+          <div className="header-user-controls">
+            <div className="avatar">PN</div>
+            <button onClick={handleLogout} className="btn-header-logout">Sign Out</button>
           </div>
         </header>
 
-        {/* Content Section Area */}
-        <main className="p-4 md:p-8 flex-1 max-w-5xl w-full mx-auto space-y-8">
-          
-          {/* Section A: Running Macro Tracker Metric Summary Cards */}
-          <div>
-            <h3 className="text-sm font-bold uppercase tracking-wider text-gray-400 mb-4">Total Daily Consumption Summary</h3>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <div className="bg-[#111827] border border-gray-800/80 rounded-2xl p-5 shadow-lg relative overflow-hidden group hover:border-emerald-500/30 transition-all">
-                <span className="block text-xs font-semibold text-gray-400 uppercase mb-1">Energy Consumed</span>
-                <span className="text-2xl font-black text-emerald-400">1,840 <span className="text-xs text-gray-500">kcal</span></span>
+        <section className="stats-grid">
+          <div className="stat-card">
+            <h3 style={{color: '#64748b'}}>Energy Balance</h3>
+            <div className="stat-value" style={{color: '#0f172a'}}>{totalCalories} <span className="unit">kcal</span></div>
+          </div>
+          <div className="stat-card">
+            <h3 style={{color: '#64748b'}}>Total Protein</h3>
+            <div className="stat-value" style={{color: '#0f172a'}}>{totalProtein} <span className="unit">g</span></div>
+          </div>
+          <div className="stat-card">
+            <h3 style={{color: '#64748b'}}>Carbohydrates</h3>
+            <div className="stat-value" style={{color: '#0f172a'}}>{totalCarbs} <span className="unit">g</span></div>
+          </div>
+          <div className="stat-card">
+            <h3 style={{color: '#64748b'}}>Dietary Fats</h3>
+            <div className="stat-value" style={{color: '#0f172a'}}>{totalFats} <span className="unit">g</span></div>
+          </div>
+        </section>
+
+        <div className="dashboard-layout">
+          <div className="dashboard-main-panel">
+            <h3 style={{marginBottom:'6px', color: '#0f172a', fontWeight: '700'}}>Log Daily Intake</h3>
+            <p className="panel-subtitle">Record and compile values into your running cloud cluster document node.</p>
+
+            <form onSubmit={handleLogFood} className="meal-form">
+              <div className="form-group">
+                <label>Food Item Title</label>
+                <input type="text" required value={foodName} onChange={(e) => setFoodName(e.target.value)} placeholder="e.g., Grilled Chicken with Basmati Rice" />
               </div>
-              <div className="bg-[#111827] border border-gray-800/80 rounded-2xl p-5 shadow-lg relative overflow-hidden group hover:border-blue-500/30 transition-all">
-                <span className="block text-xs font-semibold text-gray-400 uppercase mb-1">Total Protein Intake</span>
-                <span className="text-2xl font-black text-blue-400">142 <span className="text-xs text-gray-500">g</span></span>
+
+              <div className="form-grid">
+                <div className="form-group">
+                  <label>Energy (kcal)</label>
+                  <input type="number" required value={calories} onChange={(e) => setCalories(e.target.value)} placeholder="400" />
+                </div>
+                <div className="form-group">
+                  <label>Protein (g)</label>
+                  <input type="number" required value={protein} onChange={(e) => setProtein(e.target.value)} placeholder="40" />
+                </div>
               </div>
-              <div className="bg-[#111827] border border-gray-800/80 rounded-2xl p-5 shadow-lg relative overflow-hidden group hover:border-amber-500/30 transition-all">
-                <span className="block text-xs font-semibold text-gray-400 uppercase mb-1">Carbohydrates</span>
-                <span className="text-2xl font-black text-amber-400">195 <span className="text-xs text-gray-500">g</span></span>
+
+              <div className="form-grid">
+                <div className="form-group">
+                  <label>Carbs (g)</label>
+                  <input type="number" required value={carbs} onChange={(e) => setCarbs(e.target.value)} placeholder="35" />
+                </div>
+                <div className="form-group">
+                  <label>Fats (g)</label>
+                  <input type="number" required value={fats} onChange={(e) => setFats(e.target.value)} placeholder="5" />
+                </div>
               </div>
-              <div className="bg-[#111827] border border-gray-800/80 rounded-2xl p-5 shadow-lg relative overflow-hidden group hover:border-rose-500/30 transition-all">
-                <span className="block text-xs font-semibold text-gray-400 uppercase mb-1">Dietary Fats</span>
-                <span className="text-2xl font-black text-rose-400">58 <span className="text-xs text-gray-500">g</span></span>
+
+              <div className="form-group">
+                <label>Meal Target Window</label>
+                <select value={mealWindow} onChange={(e) => setMealWindow(e.target.value)}>
+                  <option value="Breakfast">Breakfast Allocation</option>
+                  <option value="Lunch">Lunch Allocation</option>
+                  <option value="Dinner">Dinner Allocation</option>
+                  <option value="Snack">Snacks / Other Supplementation</option>
+                </select>
               </div>
-            </div>
+
+              <button type="submit" className="btn-primary">Log Entry Node</button>
+            </form>
           </div>
 
-          {/* Section B: The Core Daily Food Logging Section Module Form */}
-          <div className="grid md:grid-cols-5 gap-6">
-            
-            {/* Input Tracking Module Interface Component */}
-            <div className="bg-[#111827] border border-gray-800 rounded-2xl p-6 shadow-xl md:col-span-2">
-              <h4 className="text-base font-bold text-white mb-4">Log Active Nutrition Entry</h4>
-              <form onSubmit={handleLogFood} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-medium text-gray-400 mb-1">Food / Meal Item Title</label>
-                  <input type="text" required value={foodName} onChange={(e) => setFoodName(e.target.value)} placeholder="e.g., Grilled Chicken Breast" className="w-full bg-[#1F2937] text-white border border-gray-700 rounded-xl p-2.5 text-sm focus:outline-none focus:border-emerald-500" />
-                </div>
+          <div className="dashboard-side-panel">
+            <h3 style={{marginBottom:'6px', color: '#0f172a', fontWeight: '700'}}>Live Ledger Stream</h3>
+            <p className="panel-subtitle">Staged document updates.</p>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-400 mb-1">Calories (kcal)</label>
-                    <input type="number" required value={calories} onChange={(e) => setCalories(e.target.value)} placeholder="320" className="w-full bg-[#1F2937] text-white border border-gray-700 rounded-xl p-2.5 text-sm focus:outline-none focus:border-emerald-500" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-400 mb-1">Protein (g)</label>
-                    <input type="number" required value={protein} onChange={(e) => setProtein(e.target.value)} placeholder="30" className="w-full bg-[#1F2937] text-white border border-gray-700 rounded-xl p-2.5 text-sm focus:outline-none focus:border-emerald-500" />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-400 mb-1">Carbs (g)</label>
-                    <input type="number" required value={carbs} onChange={(e) => setCarbs(e.target.value)} placeholder="0" className="w-full bg-[#1F2937] text-white border border-gray-700 rounded-xl p-2.5 text-sm focus:outline-none focus:border-emerald-500" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-400 mb-1">Fats (g)</label>
-                    <input type="number" required value={fats} onChange={(e) => setFats(e.target.value)} placeholder="4" className="w-full bg-[#1F2937] text-white border border-gray-700 rounded-xl p-2.5 text-sm focus:outline-none focus:border-emerald-500" />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-gray-400 mb-1">Meal Allocation Window</label>
-                  <div className="relative">
-                    <select value={mealWindow} onChange={(e) => setMealWindow(e.target.value)} className="w-full bg-[#1F2937] text-white border border-gray-700 rounded-xl p-2.5 text-sm appearance-none focus:outline-none focus:border-emerald-500 cursor-pointer">
-                      <option value="Breakfast" className="bg-[#111827]">Breakfast</option>
-                      <option value="Lunch" className="bg-[#111827]">Lunch</option>
-                      <option value="Dinner" className="bg-[#111827]">Dinner</option>
-                      <option value="Snack" className="bg-[#111827]">Snacks / Other</option>
-                    </select>
-                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-emerald-400">
-                      <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                        <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
-                      </svg>
+            <div className="meal-list">
+              {loggedMeals.map((meal) => (
+                <div key={meal._id || meal.id} className="meal-item fade-in">
+                  <div className="meal-info">
+                    <span className={`meal-tag ${meal.mealWindow.toLowerCase()}`}>{meal.mealWindow}</span>
+                    <h4 style={{color: '#0f172a'}}>{meal.foodName}</h4>
+                    <div className="meal-macros" style={{marginTop:'6px', fontSize:'11px'}}>
+                      <span>P: {meal.protein}g</span>
+                      <span>C: {meal.carbs}g</span>
+                      <span>F: {meal.fats}g</span>
                     </div>
                   </div>
+                  <div style={{fontWeight:700, color: '#0f172a'}}>{meal.calories} kcal</div>
                 </div>
-
-                <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-xl text-sm transition-all shadow-md shadow-emerald-950/40">
-                  Commit Food to Database
-                </button>
-              </form>
+              ))}
             </div>
-
-            {/* Live Data Intake Stream Ledger Display Component */}
-            <div className="bg-[#111827] border border-gray-800 rounded-2xl p-6 shadow-xl md:col-span-3 flex flex-col">
-              <div className="flex items-center justify-between mb-4">
-                <h4 className="text-base font-bold text-white">Intake History Ledger</h4>
-                <span className="text-xs text-gray-400 font-medium">Logged Items for {selectedDate}</span>
-              </div>
-              
-              <div className="space-y-3 flex-1 overflow-y-auto max-h-[350px] pr-1">
-                <div className="p-4 bg-[#1F2937]/40 border border-gray-800 rounded-xl flex items-center justify-between hover:border-gray-700 transition-colors">
-                  <div>
-                    <span className="text-xs font-bold uppercase text-emerald-400 block tracking-wider mb-0.5">Lunch</span>
-                    <h5 className="text-sm font-semibold text-white">Chicken Breast with Rice</h5>
-                    <p className="text-xs text-gray-400 mt-1">P: 45g | C: 40g | F: 6g</p>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-sm font-bold text-white block">420 kcal</span>
-                    <span className="text-[10px] text-gray-500">Recorded Live</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
           </div>
-
-        </main>
-      </div>
+        </div>
+      </main>
     </div>
   );
 }
