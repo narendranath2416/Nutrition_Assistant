@@ -167,7 +167,7 @@ export default function App() {
             </div>
             {authTab === 'register' && (
               <div className="fade-in" style={{display:'flex', flexDirection:'column', gap:'1.25rem'}}>
-                <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px'}}>
+                <div style={{display:'grid', gridTemplateColumns: '1fr 1fr', gap: '10px'}}>
                   <div className="auth-input-group">
                     <label>Age</label>
                     <input type="number" value={age} onChange={(e) => setAge(e.target.value)} placeholder="e.g. 21" />
