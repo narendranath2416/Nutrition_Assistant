@@ -7,7 +7,7 @@ export default function App() {
   const [authTab, setAuthTab] = useState('login'); 
   const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard', 'profile', 'diet_plans', 'recommendations'
   
-  // Registration & Live Profile Management States (FIXED: Set to empty strings for a normal clean form)
+  // Registration & Live Profile Management States
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [age, setAge] = useState('');
@@ -199,7 +199,7 @@ export default function App() {
 
   return (
     <div className="app-container">
-      {/* SIDEBAR NAVIGATION (FIXED: Modified shapes and buttons formatting) */}
+      {/* SIDEBAR NAVIGATION */}
       <aside className="sidebar">
         <div className="logo-section">
           <span className="logo-icon">⚡</span>
@@ -217,15 +217,13 @@ export default function App() {
         </div>
       </aside>
 
-      {/* FIXED: White background container area mapping */}
+      {/* MAIN CONTAINER PANEL */}
       <main className="main-content" style={{background: '#ffffff', minHeight: '100vh'}}>
         <header className="main-header" style={{borderBottom: '1px solid #f1f5f9', paddingBottom: '15px'}}>
           <div>
-            {/* FIXED: Heading color set to Green and subtitle text removed */}
             <h1 style={{color: '#22c55e', fontWeight: '800'}}>My Nutrition Partner</h1>
           </div>
           <div className="header-user-controls">
-            {/* FIXED: Avatar background color set to White with dark slate text */}
             <div className="avatar" style={{background: '#ffffff', color: '#1e293b', border: '1px solid #cbd5e1', fontWeight: '700'}}>PN</div>
             <button onClick={handleLogout} className="btn-header-logout">Sign Out</button>
           </div>
@@ -313,7 +311,7 @@ export default function App() {
         {activeTab === 'profile' && (
           <div className="fade-in" style={{background: '#f8fafc', border: '1px solid #e2e8f0', padding: '25px', borderRadius: '12px', marginTop: '20px'}}>
             <h2 style={{color: '#0f172a', marginBottom: '6px'}}>Profile Management</h2>
-            <p className="panel-subtitle" style={{marginBottom: '20px'}}>Keep biometric values up-to-date to re-scale calculator metrics guidelines boundaries.</p>
+            <p className="panel-subtitle" style={{disabledColor: '#64748b', marginBottom: '20px'}}>Keep biometric values up-to-date to re-scale calculator metrics guidelines boundaries.</p>
             <form onSubmit={handleUpdateProfile} style={{maxWidth: '500px', display: 'flex', flexDirection: 'column', gap: '15px'}}>
               <div className="auth-input-group"><label>Account Email Context</label><input type="email" disabled value={email} style={{background: '#e2e8f0', cursor: 'not-allowed'}} /></div>
               <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px'}}>
@@ -361,38 +359,86 @@ export default function App() {
           </div>
         )}
 
-        {/* 🥦 TAB VIEW 4: RECOMMENDATIONS */}
+        {/* 🥦 TAB VIEW 4: NUTRI RECOMMENDATIONS (REDEFINED & EXPANDED) */}
         {activeTab === 'recommendations' && (
           <div className="fade-in" style={{background: '#f8fafc', border: '1px solid #e2e8f0', padding: '25px', borderRadius: '12px', marginTop: '20px'}}>
-            <h2 style={{color: '#0f172a', marginBottom: '4px'}}>Nutritional Information & Guidance</h2>
-            <p className="panel-subtitle" style={{marginBottom: '20px'}}>High-density guidance references dynamically tailored to your goal.</p>
-            <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px'}}>
-              <div style={{background: '#ffffff', padding: '20px', borderRadius: '8px', borderLeft: '4px solid #3b82f6', borderTop: '1px solid #e2e8f0', borderRight: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0'}}>
-                <h3 style={{color: '#1e293b', fontSize: '16px'}}>Core Dietary Superfoods</h3>
-                <ul style={{paddingLeft: '20px', fontSize: '13px', color: '#475569', lineHeight: '1.8', marginTop: '10px'}}>
-                  {fitnessGoal === 'hypertrophy' ? (
-                    <>
-                      <li><strong>Whole Eggs & Greek Yogurt:</strong> Bioavailable proteins rich in minerals crucial for tissue repair.</li>
-                      <li><strong>Basmati Rice & Sweet Potatoes:</strong> Dense glycogen fuel sources to enhance lifting endurance capacity.</li>
-                      <li><strong>Peanuts & Olive Oil:</strong> Calorically efficient lipids ensuring solid energy baseline support.</li>
-                    </>
-                  ) : (
-                    <>
-                      <li><strong>Lean Chicken Breast & Salmon:</strong> Maximizes muscle protection factors while limiting extra caloric loads.</li>
-                      <li><strong>Fibrous Vegetables (Broccoli/Spinach):</strong> Essential micronutrients ensuring volume satiety blocks cravings.</li>
-                      <li><strong>Berries & Avocado:</strong> High antioxidants combined with anti-inflammatory healthy micro fats.</li>
-                    </>
-                  )}
-                </ul>
-              </div>
-              <div style={{background: '#ffffff', padding: '20px', borderRadius: '8px', borderLeft: '4px solid #22c55e', borderTop: '1px solid #e2e8f0', borderRight: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0'}}>
-                <h3 style={{color: '#1e293b', fontSize: '16px'}}>Adherence Recommendations</h3>
-                <p style={{fontSize: '13px', color: '#475569', lineHeight: '1.6', marginTop: '10px'}}>
-                  Based on your computed variables (Weight: <strong>{weight || '0'}kg</strong>, Height: <strong>{height || '0'}cm</strong>), your custom metrics targets demand 
-                  <strong> {targetCal} kcal</strong> and <strong>{targetProt}g of Protein</strong> daily. Use the entry shortcuts board to quickly log accurate documents after workout sequences!
+            <h2 style={{color: '#0f172a', marginBottom: '4px'}}>Nutritional Information & Guidance Directory</h2>
+            <p className="panel-subtitle" style={{marginBottom: '20px'}}>Dynamic clinical-tier guidance metrics corresponding directly with your active target goal profile.</p>
+            
+            <div style={{display: 'flex', flexDirection: 'column', gap: '20px'}}>
+              {/* TARGET RECAP BANNER */}
+              <div style={{background: '#ffffff', padding: '15px 20px', borderRadius: '8px', borderLeft: '4px solid #22c55e', border: '1px solid #e2e8f0', borderLeftWidth: '5px'}}>
+                <p style={{margin: 0, fontSize: '14px', color: '#334155', lineHeight: '1.5'}}>
+                  🚨 <strong>Adherence Target Analysis:</strong> For your updated metrics (Weight: <strong>{weight || '0'} kg</strong>, Height: <strong>{height || '0'} cm</strong>), the strategy engine dictates a daily consumption of <strong>{targetCal} kcal</strong> and <strong>{targetProt} g of Protein</strong>.
                 </p>
               </div>
+
+              {/* GRID SECTIONS */}
+              <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px'}}>
+                
+                {/* COLUMN 1: SUPERFOODS BREAKDOWN */}
+                <div style={{background: '#ffffff', padding: '20px', borderRadius: '8px', border: '1px solid #e2e8f0'}}>
+                  <h3 style={{color: '#1e293b', fontSize: '15px', fontWeight: '700', borderBottom: '1px solid #f1f5f9', paddingBottom: '8px', marginBottom: '12px'}}>🥩 Targeted Superfood Selection</h3>
+                  <ul style={{paddingLeft: '18px', fontSize: '13px', color: '#475569', display: 'flex', flexDirection: 'column', gap: '10px', margin: 0}}>
+                    {fitnessGoal === 'hypertrophy' ? (
+                      <>
+                        <li><strong>Whole Eggs & Greek Yogurt:</strong> Bioavailable complete proteins packed with leucine to initiate maximum muscle protein synthesis (MPS).</li>
+                        <li><strong>Basmati Rice & Sweet Potatoes:</strong> Clean glycogen sources that optimize intra-muscular fuel storage, dramatically increasing output during progressive overload training.</li>
+                        <li><strong>Peanuts & Cold-Pressed Olive Oil:</strong> Calorically dense lipids that supply safe, raw clean energy bounds, making a clean caloric surplus effortless to achieve.</li>
+                      </>
+                    ) : (
+                      <>
+                        <li><strong>Lean Chicken Breast & White Fish:</strong> Extremely high protein-to-calorie density ratios that fully protect lean muscle mass from catabolism during a deficit.</li>
+                        <li><strong>Fibrous Vegetables (Broccoli & Spinach):</strong> High volume nutrition providing structural gastric satiety blocks, suppressing mechanical hunger signals cleanly.</li>
+                        <li><strong>Wild Berries & Avocados:</strong> Low glycemic carbohydrates rich in cell-protecting antioxidants alongside anti-inflammatory monounsaturated structural fats.</li>
+                      </>
+                    )}
+                  </ul>
+                </div>
+
+                {/* COLUMN 2: TIMING & MEAL SCHEDULE RULES */}
+                <div style={{background: '#ffffff', padding: '20px', borderRadius: '8px', border: '1px solid #e2e8f0'}}>
+                  <h3 style={{color: '#1e293b', fontSize: '15px', fontWeight: '700', borderBottom: '1px solid #f1f5f9', paddingBottom: '8px', marginBottom: '12px'}}>⏰ Meal Timing & Allocation Logic</h3>
+                  <ul style={{paddingLeft: '18px', fontSize: '13px', color: '#475569', display: 'flex', flexDirection: 'column', gap: '10px', margin: 0}}>
+                    {fitnessGoal === 'hypertrophy' ? (
+                      <>
+                        <li><strong>Pre-Workout Window:</strong> Consume a composite meal of complex carbohydrates and 30g+ protein 90 minutes before your session to maximize raw power outputs.</li>
+                        <li><strong>Post-Workout Anabolic Phase:</strong> Prioritize an instant fast-digesting protein stream (like Whey protein) within 45 minutes to accelerate tissue remodeling.</li>
+                        <li><strong>Protein Pacing Rule:</strong> Space your protein intake evenly across 4 distinct meals to sustain a consistent positive nitrogen balance throughout the day.</li>
+                      </>
+                    ) : (
+                      <>
+                        <li><strong>Satiety Scheduling:</strong> Frontload 40% of your total daily carbohydrate allowances around your heavy training windows to maintain energy levels while managing baseline rules.</li>
+                        <li><strong>Intermittent Allocation:</strong> Consider delaying your breakfast window to narrow your eating window, creating an automated mental buffer against evening cravings.</li>
+                        <li><strong>Night Casein Intake:</strong> Consume a slow-release clean protein item (like low-fat paneer or curd) before sleeping to control overnight muscle recovery.</li>
+                      </>
+                    )}
+                  </ul>
+                </div>
+
+                {/* COLUMN 3: MICRONUTRIENTS & INTEGRATION */}
+                <div style={{background: '#ffffff', padding: '20px', borderRadius: '8px', border: '1px solid #e2e8f0'}}>
+                  <h3 style={{color: '#1e293b', fontSize: '15px', fontWeight: '700', borderBottom: '1px solid #f1f5f9', paddingBottom: '8px', marginBottom: '12px'}}>💧 Micronutrient & Hydration Guardrails</h3>
+                  <ul style={{paddingLeft: '18px', fontSize: '13px', color: '#475569', display: 'flex', flexDirection: 'column', gap: '10px', margin: 0}}>
+                    <li><strong>Hydration Standard:</strong> Maintain a minimum intake of 3.5 to 4.5 liters of clean water daily to facilitate safe cell hydration, metabolic pathways, and digestion.</li>
+                    <li><strong>Electrolyte Management:</strong> Ensure sufficient dietary potassium and sodium inputs to guard against cramping and keep intramuscular pump metrics high.</li>
+                    <li><strong>Fiber Tracking Minimums:</strong> Target at least 30g of dietary fiber daily from whole foods to stabilize blood glucose spikes and support optimal gut health.</li>
+                  </ul>
+                </div>
+
+                {/* COLUMN 4: SYSTEM TRACKING RESPONSIBILITY RULES */}
+                <div style={{background: '#ffffff', padding: '20px', borderRadius: '8px', border: '1px solid #e2e8f0'}}>
+                  <h3 style={{color: '#1e293b', fontSize: '15px', fontWeight: '700', borderBottom: '1px solid #f1f5f9', paddingBottom: '8px', marginBottom: '12px'}}>🛡️ End-User Operational Responsibilities</h3>
+                  <ul style={{paddingLeft: '18px', fontSize: '13px', color: '#475569', display: 'flex', flexDirection: 'column', gap: '10px', margin: 0}}>
+                    <li><strong>Consistent Logging:</strong> Commit input values immediately post-consumption. Tracking errors compound fast when relying on memory at the end of the day.</li>
+                    <li><strong>Biometric Synchronization:</strong> Access the <em>Profile Management</em> view weekly to adjust body weight changes. The target math engines adapt seamlessly.</li>
+                    <li><strong>Adherence Reporting:</strong> Cross-check your dynamic ledger history stream items against your set calendar diet plans to evaluate and optimize your compliance.</li>
+                  </ul>
+                </div>
+
+              </div>
             </div>
+
           </div>
         )}
       </main>
